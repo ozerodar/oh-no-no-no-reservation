@@ -73,6 +73,37 @@ def get_optimal_parking_spot(timetable, request):
     pass
 
 
+def get_minimal_window_parking_spot(timetable, request):
+    """Return the parking spot which has reservations with start or end time as close to requested interval as
+    possible. Return None if there is no free parking spots"""
+    difference, optimal_spot, minimal_difference = None, None, None
+
+    for parking_spot in timetable.parking_spots:
+        for time_slot in parking_spot.reservations:
+
+            previous_time_slot = parking_spot.get_previous_time_slot(time_slot)
+            next_time_slot = parking_spot.get_next_time_slot(time_slot)
+
+            # check if we the reservation can be put between the ending of the end of this time slot and the
+            # beginning of the next one
+            if request['start'] >= time_slot['end'] and (next_time_slot is None
+                                                         or next_time_slot['start'] >= request['end']):
+
+                difference = request['start'] - time_slot['end']
+            # check if we the reservation can be put between the ending of the end of previous and the beginning of
+            # this time slot
+            elif request['end'] <= time_slot['start'] and (previous_time_slot is None
+                                                           or previous_time_slot['end'] <= request['start']):
+                difference = time_slot['start'] - request['end']
+
+            if minimal_difference is not None and difference < minimal_difference \
+                    or minimal_difference is None and difference is not None:
+                optimal_spot = parking_spot
+                minimal_difference = difference
+
+    return optimal_spot
+
+
 def get_first_free_parking_spot(timetable, request):
     """Return the first parking spot with free time slot for a given interval.
     Return None if there is no free parking spots"""
