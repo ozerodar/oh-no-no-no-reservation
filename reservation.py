@@ -2,7 +2,6 @@ import json
 from datetime import timedelta
 from types import SimpleNamespace
 
-
 class ParkingSpot:
     def __init__(self, name, reservations=None):
         self.name = name
@@ -57,7 +56,7 @@ class Timetable:
 
     def __str__(self):
         """Print every parking spot and its actual reservations"""
-        out_str = "old_timetable:\n"
+        out_str = "timetable:\n"
         for parking_spot in self.parking_spots:
             out_str = out_str + str(parking_spot) + "\n"
         return out_str
@@ -193,11 +192,11 @@ def optimize_timetable(old_timetable):
 
 
 if __name__ == '__main__':
-    data = '{"parking_spots": [{"name": "p1", "reservations": [{"start": "10:00", "end": "13:00"}, \
-                                                              {"start": "16:00", "end": "18:00"}]}, \
-                               {"name": "p2", "reservations": [{"start": "9:00", "end": "10:00"},\
-                                                               {"start": "15:00", "end": "16:00"}]},\
-                               {"name": "p3", "reservations": [{"start": "08:00", "end": "18:00"}]}]}'
+    data = '{"parking_spots": [{"name": "p1", "reservations": [{"user": "1", "start": "10:00", "end": "13:00"}, \
+                                                              {"user": "2", "start": "16:00", "end": "18:00"}]}, \
+                               {"name": "p2", "reservations": [{"user": "3", "start": "9:00", "end": "10:00"},\
+                                                               {"user": "4", "start": "15:00", "end": "16:00"}]},\
+                               {"name": "p3", "reservations": [{"user": "5", "start": "08:00", "end": "18:00"}]}]}'
 
     parking_spots_timetable = json.loads(data, object_hook=lambda d: SimpleNamespace(**d))
     timetable = Timetable(parking_spots_timetable.parking_spots)
@@ -215,4 +214,5 @@ if __name__ == '__main__':
     request = {'start': timedelta(hours=16, minutes=0), 'end': timedelta(hours=18, minutes=0)}
     timetable.remove_reservation('p1', request)
     print(timetable)
-    optimize_timetable(timetable)
+    optimized_timetable = optimize_timetable(timetable)
+    print(optimized_timetable)
