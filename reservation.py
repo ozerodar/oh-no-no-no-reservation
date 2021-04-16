@@ -38,6 +38,13 @@ class ParkingSpot:
                 return
         self.reservations.append(interval)  # append to the end
 
+    def remove_reservation(self, reservation):
+        """Remove a reservation from the timetable"""
+        for idx, time_slot in enumerate(self.reservations):
+            if reservation['start'] == time_slot['start'] and reservation['end'] == time_slot['end']:
+                self.reservations.remove(time_slot)
+                break
+
 
 class Timetable:
     def __init__(self, parking_spots):
@@ -56,6 +63,11 @@ class Timetable:
         for parking_spot in self.parking_spots:
             if parking_spot.name == target_parking_spot.name:
                 parking_spot.add_reservation(time_interval)
+
+    def remove_reservation(self, reservation):
+        for parking_spot in self.parking_spots:
+            if parking_spot.name == reservation['spot']:
+                parking_spot.remove_reservation(reservation)
 
 
 def get_reservation_time(slot):
@@ -136,6 +148,7 @@ if __name__ == '__main__':
     timetable = Timetable(parking_spots_timetable.parking_spots)
     request = {'start': timedelta(hours=14, minutes=0), 'end': timedelta(hours=15, minutes=0)}
 
+    print()
     print(timetable)
 
     spot = get_first_free_parking_spot(timetable, request)
@@ -143,4 +156,9 @@ if __name__ == '__main__':
     spot_min_window = get_minimal_window_parking_spot(timetable, request)
     print('request', request['start'], '-', request['end'], 'optimal parking spot', spot_min_window)
     timetable.add_reservation(spot_min_window, request)
+    print(timetable)
+
+    request = {'spot': 'p1', 'start': timedelta(hours=16, minutes=0), 'end': timedelta(hours=18, minutes=0)}
+    timetable.remove_reservation(request)
+    print('timetable:')
     print(timetable)
