@@ -65,7 +65,8 @@ class Timetable:
 
         if parking_spots is not None:
             for parking_spot_info in parking_spots:
-                self.parking_spots.append(ParkingSpot(parking_spot_info.name, parking_spot_info.reservable, parking_spot_info.reservations))
+                self.parking_spots.append(
+                    ParkingSpot(parking_spot_info.name, parking_spot_info.reservable, parking_spot_info.reservations))
 
     def __str__(self):
         """Print every parking spot and its actual reservations"""
@@ -89,24 +90,26 @@ class Timetable:
 
     def get_spot_with_earliest_time_slot(self):
         earliest_start = timedelta(hours=99999, minutes=0)
-        spot = None
+        spot, earliest_time_slot = None, None
         for parking_spot in self.parking_spots:
             if len(parking_spot.reservations) > 0 and parking_spot.reservations[0].start < earliest_start:
                 earliest_start = parking_spot.reservations[0].start
                 spot = parking_spot
-        return spot
+                earliest_time_slot = spot.reservations[0]
+        return spot, earliest_time_slot
 
     def get_spot_with_closest_time_slot(self, input_time_slot):
         """Get the spot with reservation that is closest to a given time slot"""
         smallest_difference = timedelta(hours=99999, minutes=0)
-        spot = None
+        spot, closest_time_slot = None, None
         for parking_spot in self.parking_spots:
             for time_slot in parking_spot.reservations:
                 difference = time_slot.start - input_time_slot.end
                 if time_slot.start >= input_time_slot.end and difference < smallest_difference:
                     spot = parking_spot
+                    closest_time_slot = time_slot
                     smallest_difference = difference
-        return spot
+        return spot, closest_time_slot
 
 
 def get_reservation_time(slot):
@@ -134,13 +137,13 @@ def get_minimal_window_parking_spot(timetable, request):
             # check if we the reservation can be put between the ending of the end of this time slot and the
             # beginning of the next one
             if request.start >= time_slot.end and (next_time_slot is None
-                                                         or next_time_slot.start >= request.end):
+                                                   or next_time_slot.start >= request.end):
 
                 difference = request.start - time_slot.end
             # check if we the reservation can be put between the ending of the end of previous and the beginning of
             # this time slot
             elif request.end <= time_slot.start and (previous_time_slot is None
-                                                           or previous_time_slot.end <= request.start):
+                                                     or previous_time_slot.end <= request.start):
                 difference = time_slot.start - request.end
 
             if minimal_difference is not None and difference < minimal_difference \
@@ -165,11 +168,11 @@ def get_first_free_parking_spot(timetable, request):
 
             # check if we the reservation can be put after ending or before the beginning of this time slot
             if request.start >= time_slot.end and (next_time_slot is None
-                                                         or next_time_slot.start >= request.end):
+                                                   or next_time_slot.start >= request.end):
 
                 return parking_spot
             elif request.end <= time_slot.start and (previous_time_slot is None
-                                                           or previous_time_slot.end <= request.start):
+                                                     or previous_time_slot.end <= request.start):
                 return parking_spot
     return None
 
@@ -179,23 +182,21 @@ def optimize_timetable(old_timetable):
     new_timetable = Timetable()
     for parking_spot in old_timetable.parking_spots:
         current_parking_spot = ParkingSpot(parking_spot.name, parking_spot.is_reservable)
-        earliest_start_spot = old_timetable.get_spot_with_earliest_time_slot()
+        earliest_start_spot, current_time_slot = old_timetable.get_spot_with_earliest_time_slot()
 
         if earliest_start_spot is None:
             new_timetable.add_parking_spot(current_parking_spot)
             break
 
-        current_time_slot = earliest_start_spot.reservations[0]
         current_parking_spot.add_reservation(current_time_slot)
         old_timetable.remove_reservation(earliest_start_spot.name, current_time_slot)
 
         while True:
-            parking_spot = old_timetable.get_spot_with_closest_time_slot(current_time_slot)
+            parking_spot, current_time_slot = old_timetable.get_spot_with_closest_time_slot(current_time_slot)
 
             if parking_spot is None:
                 break
 
-            current_time_slot = parking_spot.reservations[0]
             current_parking_spot.add_reservation(current_time_slot)
             old_timetable.remove_reservation(parking_spot.name, current_time_slot)
         new_timetable.add_parking_spot(current_parking_spot)
@@ -208,7 +209,7 @@ if __name__ == '__main__':
                                {"name": "p2", "reservable": "True", "reservations": [{"user": "3", "start": "9:00", "end": "10:00"},\
                                                                {"user": "4", "start": "15:00", "end": "16:00"}]},\
                                {"name": "p3", "reservable": "True", "reservations": [{"user": "5", "start": "08:00", "end": "18:00"}]}],\
-            "request": {"user": "55", "time":{"start": "10:00", "end": "15:00"}}}'
+            "request": {"user": "55", "time":{"start": "14:00", "end": "15:00"}}}'
 
     data = json.loads(data_json, object_hook=lambda d: SimpleNamespace(**d))
     timetable = Timetable(data.parking_spots)
