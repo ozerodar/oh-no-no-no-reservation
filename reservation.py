@@ -66,7 +66,29 @@ def get_reservation_time(slot):
     end = timedelta(hours=int(end_hours), minutes=int(end_minutes))
     return start, end
 
+
 def get_optimal_parking_spot(timetable, request):
     """Return the parking spot that maximizes usage of a parking spot capacity.
     Return None if there is no free parking spots"""
     pass
+
+
+def get_first_free_parking_spot(timetable, request):
+    """Return the first parking spot with free time slot for a given interval.
+    Return None if there is no free parking spots"""
+
+    for parking_spot in timetable.parking_spots:
+        for time_slot in parking_spot.reservations:
+
+            previous_time_slot = parking_spot.get_previous_time_slot(time_slot)
+            next_time_slot = parking_spot.get_next_time_slot(time_slot)
+
+            # check if we the reservation can be put after ending or before the beginning of this time slot
+            if request['start'] >= time_slot['end'] and (next_time_slot is None
+                                                         or next_time_slot['start'] >= request['end']):
+
+                return parking_spot
+            elif request['end'] <= time_slot['start'] and (previous_time_slot is None
+                                                           or previous_time_slot['end'] <= request['start']):
+                return parking_spot
+    return None
