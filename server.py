@@ -6,17 +6,19 @@ from flask import request, jsonify
 import json
 
 from reservation import Timetable, get_reservation_time, TimeSlot, get_first_free_parking_spot, \
-    get_minimal_window_parking_spot, optimize_timetable
+    get_minimal_window_parking_spot, optimize_timetable, get_request
 
 app = Flask(__name__)
 
 
 def process_reservation_request(data):
-    timetable = Timetable(data['parking_spots'])
-    start, end = get_reservation_time(data['request']['time'])
-    request = TimeSlot(data['request']['user'], start, end)
+    # data = json.loads(data_json)
+    timetable = Timetable(data['winstrom']['udalost'], data)
+    request = get_request(data['winstrom']['udalost'])
 
-    # spot = get_first_free_parking_spot(timetable, request)
+    print(timetable)
+
+    spot = get_first_free_parking_spot(timetable, request)
     spot_min_window = get_minimal_window_parking_spot(timetable, request)
     if spot_min_window:
         timetable.add_reservation(spot_min_window, request)
@@ -25,9 +27,8 @@ def process_reservation_request(data):
     # request = TimeSlot("10", timedelta(hours=16, minutes=0), timedelta(hours=18, minutes=0))
     # timetable.remove_reservation('p1', request)
     # print(timetable)
-    optimized_timetable = optimize_timetable(timetable)
-    print(optimized_timetable)
-    return optimized_timetable.to_json()
+    # optimized_timetable = optimize_timetable(timetable)
+    # print(optimized_timetable)
 
 
 @app.route('/thepostthepost/<shark_name>', methods=['GET', 'POST'])

@@ -1,11 +1,12 @@
+import copy
 import datetime
 import json
 from datetime import timedelta
-from types import SimpleNamespace
 
 
 class TimeSlot:
-    def __init__(self, user, start, end):
+    def __init__(self, id, user, start, end):
+        self.id = id
         self.user = user
         self.start = start
         self.end = end
@@ -24,7 +25,7 @@ class ParkingSpot:
         if reservations is not None:
             for time_slot in reservations:
                 start, end = get_reservation_time(time_slot['start'], time_slot['end'])
-                self.reservations.append(TimeSlot(time_slot['user'], start, end))
+                self.reservations.append(TimeSlot(time_slot['id'], time_slot['user'], start, end))
 
     def __str__(self):
         return self.name + ": " + ", ".join(
@@ -61,8 +62,9 @@ class ParkingSpot:
 
 
 class Timetable:
-    def __init__(self, reservations=None):
+    def __init__(self, reservations=None, json_data=None):
         self.parking_spots = []
+        self.original_json = json_data
 
         for i in range(101, 121):
             self.parking_spots.append(ParkingSpot(str(i), True))  # TODO: add reservability info
@@ -73,7 +75,7 @@ class Timetable:
                 for spot in self.parking_spots:
                     if spot.name == reservation_info['predmet']:
                         start, end = get_reservation_time(reservation_info['zahajeni'], reservation_info['dokonceni'])
-                        spot.add_reservation(TimeSlot(reservation_info['zodpPrac'], start, end))
+                        spot.add_reservation(TimeSlot(reservation_info['id'], reservation_info['zodpPrac'], start, end))
 
     def __str__(self):
         """Print every parking spot and its actual reservations"""
@@ -119,12 +121,17 @@ class Timetable:
         return spot, closest_time_slot
 
     def to_json(self):
-        data = {'parking_spots': []}
+        data = copy.deepcopy(self.original_json)
+
         for parking_spot in self.parking_spots:
-            reservations = []
             for time_slot in parking_spot.reservations:
-                reservations.append({"user": time_slot.user, "start": str(time_slot.start), "end": str(time_slot.end)})
-            data['parking_spots'].append({"name": parking_spot.name, "reservable": parking_spot.is_reservable, "reservations": reservations})
+                id = time_slot.id
+                for element in data['winstrom']['udalost']:
+                    if element['id'] == id:
+                        element['predmet'] = parking_spot.name
+
+                # reservations.append({"user": time_slot.user, "start": str(time_slot.start), "end": str(time_slot.end)})
+            # data['parking_spots'].append({"name": parking_spot.name, "reservable": parking_spot.is_reservable, "reservations": reservations})
         return data
 
 
@@ -210,7 +217,7 @@ def get_first_free_parking_spot(timetable, request):
 
 def optimize_timetable(old_timetable):
     """Take a timetable and find equivalent timetable with same or lesser windows between time slots"""
-    new_timetable = Timetable()
+    new_timetable = Timetable(json_data=old_timetable.original_json)
     for parking_spot in old_timetable.parking_spots:
         current_parking_spot = ParkingSpot(parking_spot.name, parking_spot.is_reservable)
 
@@ -247,75 +254,11 @@ def get_request(data):
     for element in data:
         if element['predmet'] == "":
             start, end = get_reservation_time(element['zahajeni'], element['dokonceni'])
-            return TimeSlot(element['zodpPrac'], start, end)
+            return TimeSlot(element['id'], element['zodpPrac'], start, end)
 
 
 if __name__ == '__main__':
-    data_json = '{\
-        "parking_spots": [\
-            {\
-                "name": "p1",\
-                "reservable": false,\
-                "reservations": [\
-                    {\
-                        "end": "18:00:00",\
-                        "start": "8:00:00",\
-                        "user": "5"\
-                    }\
-                ]\
-            },\
-            {\
-                "name": "p2",\
-                "reservable": false,\
-                "reservations": [\
-                    {\
-                        "end": "10:00:00",\
-                        "start": "9:00:00",\
-                        "user": "3"\
-                    },\
-                    {\
-                        "end": "13:00:00",\
-                        "start": "10:00:00",\
-                        "user": "1"\
-                    },\
-                    {\
-                        "end": "16:00:00",\
-                        "start": "15:00:00",\
-                        "user": "4"\
-                    },\
-                    {\
-                        "end": "18:00:00",\
-                        "start": "16:00:00",\
-                        "user": "2"\
-                    }\
-                ]\
-            },\
-            {\
-                "name": "p3",\
-                "reservable": true,\
-                "reservations": []\
-            }\
-        ],\
-        "request": {"user": "55", "time":{"start": "14:00:00", "end": "15:00:00"}}\
-    }'
-
-    data_json = '{\
-        "parking_spots": [\
-            {\
-                "name": "p1",\
-                "reservable": true,\
-                "reservations": [\
-                    {\
-                        "end": "2021-04-17T13:00:49.285+02:00",\
-                        "start": "2021-04-17T10:00:49.285+02:00",\
-                        "user": "5"\
-                    }\
-                ]\
-            }\
-        ],\
-        "request": {"user": "55", "time":{"start": "2021-04-17T14:00:49.285+02:00", "end": "2021-04-17T15:00:49.285+02:00"}}\
-    }'
-
+    # test data
     data_json = '{\
     "winstrom": {\
         "@version": "1.0",\
@@ -372,7 +315,7 @@ if __name__ == '__main__':
     }}'
 
     data = json.loads(data_json)
-    timetable = Timetable(data['winstrom']['udalost'])
+    timetable = Timetable(data['winstrom']['udalost'], data)
     request = get_request(data['winstrom']['udalost'])
 
     print(timetable)
@@ -385,8 +328,9 @@ if __name__ == '__main__':
         timetable.add_reservation(spot_min_window, request)
     print(timetable)
 
+    print(timetable.to_json())
     # request = TimeSlot("10", timedelta(hours=16, minutes=0), timedelta(hours=18, minutes=0))
     # timetable.remove_reservation('p1', request)
     # print(timetable)
-    optimized_timetable = optimize_timetable(timetable)
-    print(optimized_timetable)
+    # optimized_timetable = optimize_timetable(timetable)
+    # print(optimized_timetable)
