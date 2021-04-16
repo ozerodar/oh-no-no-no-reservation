@@ -57,6 +57,7 @@ class Timetable:
             if parking_spot.name == target_parking_spot.name:
                 parking_spot.add_reservation(time_interval)
 
+
 def get_reservation_time(slot):
     """Convert time slot from a string (for example '13:00') to timedelta time format"""
     start_hours, start_minutes = slot.start.split(':')
@@ -64,3 +65,8 @@ def get_reservation_time(slot):
     start = timedelta(hours=int(start_hours), minutes=int(start_minutes))
     end = timedelta(hours=int(end_hours), minutes=int(end_minutes))
     return start, end
+
+def get_optimal_parking_spot(timetable, request):
+    """Return the parking spot that maximizes usage of a parking spot capacity.
+    Return None if there is no free parking spots"""
+    pass
