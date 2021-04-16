@@ -1,3 +1,4 @@
+import datetime
 import json
 from datetime import timedelta
 from types import SimpleNamespace
@@ -15,14 +16,14 @@ class ParkingSpot:
         self.name = name
         self.reservations = []
 
-        if reservable == 'True':
+        if reservable:
             self.is_reservable = True
         else:
             self.is_reservable = False
 
         if reservations is not None:
             for time_slot in reservations:
-                start, end = get_reservation_time(time_slot)
+                start, end = get_reservation_time(time_slot['start'], time_slot['end'])
                 self.reservations.append(TimeSlot(time_slot['user'], start, end))
 
     def __str__(self):
@@ -60,13 +61,19 @@ class ParkingSpot:
 
 
 class Timetable:
-    def __init__(self, parking_spots=None):
+    def __init__(self, reservations=None):
         self.parking_spots = []
 
-        if parking_spots is not None:
-            for parking_spot_info in parking_spots:
-                self.parking_spots.append(
-                    ParkingSpot(parking_spot_info['name'], parking_spot_info['reservable'], parking_spot_info['reservations']))
+        for i in range(101, 121):
+            self.parking_spots.append(ParkingSpot(str(i), True))  # TODO: add reservability info
+
+        if reservations is not None:
+            for reservation_info in reservations:
+                # print(reservation_info)
+                for spot in self.parking_spots:
+                    if spot.name == reservation_info['predmet']:
+                        start, end = get_reservation_time(reservation_info['zahajeni'], reservation_info['dokonceni'])
+                        spot.add_reservation(TimeSlot(reservation_info['zodpPrac'], start, end))
 
     def __str__(self):
         """Print every parking spot and its actual reservations"""
@@ -92,7 +99,7 @@ class Timetable:
         earliest_start = timedelta(hours=99999, minutes=0)
         spot, earliest_time_slot = None, None
         for parking_spot in self.parking_spots:
-            if len(parking_spot.reservations) > 0 and parking_spot.reservations[0].start < earliest_start:
+            if parking_spot.is_reservable and len(parking_spot.reservations) > 0 and parking_spot.reservations[0].start <= earliest_start:
                 earliest_start = parking_spot.reservations[0].start
                 spot = parking_spot
                 earliest_time_slot = spot.reservations[0]
@@ -105,28 +112,40 @@ class Timetable:
         for parking_spot in self.parking_spots:
             for time_slot in parking_spot.reservations:
                 difference = time_slot.start - input_time_slot.end
-                if time_slot.start >= input_time_slot.end and difference < smallest_difference:
+                if parking_spot.is_reservable and time_slot.start >= input_time_slot.end and difference < smallest_difference:
                     spot = parking_spot
                     closest_time_slot = time_slot
                     smallest_difference = difference
         return spot, closest_time_slot
 
     def to_json(self):
-        data['parking_spots'] = []
+        data = {'parking_spots': []}
         for parking_spot in self.parking_spots:
             reservations = []
             for time_slot in parking_spot.reservations:
-                reservations.append({"user": time_slot.user, "start": time_slot.start, "end": time_slot.end})
+                reservations.append({"user": time_slot.user, "start": str(time_slot.start), "end": str(time_slot.end)})
             data['parking_spots'].append({"name": parking_spot.name, "reservable": parking_spot.is_reservable, "reservations": reservations})
-        return json.dumps(data)
+        return data
 
 
-def get_reservation_time(slot):
-    """Convert time slot from a string (for example '13:00') to timedelta time format"""
-    start_hours, start_minutes = slot['start'].split(':')
-    end_hours, end_minutes = slot['end'].split(':')
-    start = timedelta(hours=int(start_hours), minutes=int(start_minutes))
-    end = timedelta(hours=int(end_hours), minutes=int(end_minutes))
+def convert_date_to_time(date_time):
+    """Convert time slot from a string (for example '2021-04-13T10:41:49.285+02:00') to timedelta time format"""
+    ref_date = datetime.date(2021, 4, 17)  # FIXME: nestihame
+    date, time_region = date_time.split('T')
+    year, month, day = date.split('-')
+    time, _ = time_region.split('.')
+    hours, minutes, _ = time.split(':')
+
+    date = datetime.date(int(year), int(month), int(day))
+    days = date - ref_date
+
+    return timedelta(days=days.days, hours=int(hours), minutes=int(minutes))
+
+
+def get_reservation_time(start_date, end_date):
+    """Get start and end time of a reservation"""
+    start = convert_date_to_time(start_date)
+    end = convert_date_to_time(end_date)
     return start, end
 
 
@@ -160,6 +179,9 @@ def get_minimal_window_parking_spot(timetable, request):
                 optimal_spot = parking_spot
                 minimal_difference = difference
 
+        # there is a possibility that there is no reservations on a spot
+        if len(parking_spot.reservations) == 0 and optimal_spot is None:
+            optimal_spot = parking_spot
     return optimal_spot
 
 
@@ -191,6 +213,15 @@ def optimize_timetable(old_timetable):
     new_timetable = Timetable()
     for parking_spot in old_timetable.parking_spots:
         current_parking_spot = ParkingSpot(parking_spot.name, parking_spot.is_reservable)
+
+        if not current_parking_spot.is_reservable:
+            new_timetable.add_parking_spot(current_parking_spot)
+            for reservation in parking_spot.reservations:
+                current_parking_spot.add_reservation(reservation)
+            for reservation in parking_spot.reservations:
+                old_timetable.remove_reservation(parking_spot.name, reservation)
+            continue
+
         earliest_start_spot, current_time_slot = old_timetable.get_spot_with_earliest_time_slot()
 
         if earliest_start_spot is None:
@@ -212,26 +243,146 @@ def optimize_timetable(old_timetable):
     return new_timetable
 
 
+def get_request(data):
+    for element in data:
+        if element['predmet'] == "":
+            start, end = get_reservation_time(element['zahajeni'], element['dokonceni'])
+            return TimeSlot(element['zodpPrac'], start, end)
+
+
 if __name__ == '__main__':
-    data_json = '{"parking_spots": [{"name": "p1", "reservable": "True", "reservations": [{"user": "1", "start": "10:00", "end": "13:00"}, \
-                                                              {"user": "2", "start": "16:00", "end": "18:00"}]}, \
-                               {"name": "p2", "reservable": "True", "reservations": [{"user": "3", "start": "9:00", "end": "10:00"},\
-                                                               {"user": "4", "start": "15:00", "end": "16:00"}]},\
-                               {"name": "p3", "reservable": "True", "reservations": [{"user": "5", "start": "08:00", "end": "18:00"}]}],\
-            "request": {"user": "55", "time":{"start": "14:00", "end": "15:00"}}}'
+    data_json = '{\
+        "parking_spots": [\
+            {\
+                "name": "p1",\
+                "reservable": false,\
+                "reservations": [\
+                    {\
+                        "end": "18:00:00",\
+                        "start": "8:00:00",\
+                        "user": "5"\
+                    }\
+                ]\
+            },\
+            {\
+                "name": "p2",\
+                "reservable": false,\
+                "reservations": [\
+                    {\
+                        "end": "10:00:00",\
+                        "start": "9:00:00",\
+                        "user": "3"\
+                    },\
+                    {\
+                        "end": "13:00:00",\
+                        "start": "10:00:00",\
+                        "user": "1"\
+                    },\
+                    {\
+                        "end": "16:00:00",\
+                        "start": "15:00:00",\
+                        "user": "4"\
+                    },\
+                    {\
+                        "end": "18:00:00",\
+                        "start": "16:00:00",\
+                        "user": "2"\
+                    }\
+                ]\
+            },\
+            {\
+                "name": "p3",\
+                "reservable": true,\
+                "reservations": []\
+            }\
+        ],\
+        "request": {"user": "55", "time":{"start": "14:00:00", "end": "15:00:00"}}\
+    }'
+
+    data_json = '{\
+        "parking_spots": [\
+            {\
+                "name": "p1",\
+                "reservable": true,\
+                "reservations": [\
+                    {\
+                        "end": "2021-04-17T13:00:49.285+02:00",\
+                        "start": "2021-04-17T10:00:49.285+02:00",\
+                        "user": "5"\
+                    }\
+                ]\
+            }\
+        ],\
+        "request": {"user": "55", "time":{"start": "2021-04-17T14:00:49.285+02:00", "end": "2021-04-17T15:00:49.285+02:00"}}\
+    }'
+
+    data_json = '{\
+    "winstrom": {\
+        "@version": "1.0",\
+        "udalost": [\
+            {\
+                "id": "1",\
+                "lastUpdate": "2021-04-17T09:42:11.397+02:00",\
+                "cenik": "",\
+                "firma": "",\
+                "zahajeni": "2021-04-17T19:41:49.285+02:00",\
+                "dokonceni": "2021-04-17T20:41:49.285+02:00",\
+                "predmet": "",\
+                "typAkt": "code:UDÁLOST",\
+                "typAkt@ref": "/c/rezervace1/typ-aktivity/1.json",\
+                "typAkt@showAs": "UDÁLOST: Událost",\
+                "zodpPrac": "code:admin",\
+                "zodpPrac@ref": "/c/rezervace1/uzivatel/1.json",\
+                "zodpPrac@showAs": "admin",\
+                "majetek": ""\
+            },\
+            {\
+                "id": "41",\
+                "lastUpdate": "2021-04-17T23:04:21.274+02:00",\
+                "cenik": "",\
+                "firma": "",\
+                "zahajeni": "2021-04-17T11:41:49.285+02:00",\
+                "dokonceni": "2021-04-17T12:41:49.285+02:00",\
+                "predmet": "101",\
+                "typAkt": "code:UDÁLOST",\
+                "typAkt@ref": "/c/rezervace1/typ-aktivity/1.json",\
+                "typAkt@showAs": "UDÁLOST: Událost",\
+                "zodpPrac": "code:admin",\
+                "zodpPrac@ref": "/c/rezervace1/uzivatel/1.json",\
+                "zodpPrac@showAs": "admin",\
+                "majetek": ""\
+            },\
+            {\
+                "id": "42",\
+                "lastUpdate": "2021-04-16T23:33:09.927+02:00",\
+                "cenik": "",\
+                "firma": "",\
+                "zahajeni": "2021-04-17T15:41:49.285+02:00",\
+                "dokonceni": "2021-04-17T16:41:49.285+02:00",\
+                "predmet": "102",\
+                "typAkt": "code:UDÁLOST",\
+                "typAkt@ref": "/c/rezervace1/typ-aktivity/1.json",\
+                "typAkt@showAs": "UDÁLOST: Událost",\
+                "zodpPrac": "code:admin",\
+                "zodpPrac@ref": "/c/rezervace1/uzivatel/1.json",\
+                "zodpPrac@showAs": "admin",\
+                "majetek": ""\
+            }\
+        ]\
+    }}'
 
     data = json.loads(data_json)
-    timetable = Timetable(data['parking_spots'])
-    start, end = get_reservation_time(data['request']['time'])
-    request = TimeSlot(data['request']['user'], start, end)
+    timetable = Timetable(data['winstrom']['udalost'])
+    request = get_request(data['winstrom']['udalost'])
 
-    # print(old_timetable)
+    print(timetable)
 
     spot = get_first_free_parking_spot(timetable, request)
     # print('request', request['start'], '-', request['end'], 'first free parking spot', spot)
     spot_min_window = get_minimal_window_parking_spot(timetable, request)
     # print('request', request['start'], '-', request['end'], 'optimal parking spot', spot_min_window)
-    timetable.add_reservation(spot_min_window, request)
+    if spot_min_window:
+        timetable.add_reservation(spot_min_window, request)
     print(timetable)
 
     # request = TimeSlot("10", timedelta(hours=16, minutes=0), timedelta(hours=18, minutes=0))

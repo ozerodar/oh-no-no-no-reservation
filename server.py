@@ -18,7 +18,8 @@ def process_reservation_request(data):
 
     # spot = get_first_free_parking_spot(timetable, request)
     spot_min_window = get_minimal_window_parking_spot(timetable, request)
-    timetable.add_reservation(spot_min_window, request)
+    if spot_min_window:
+        timetable.add_reservation(spot_min_window, request)
     print(timetable)
 
     # request = TimeSlot("10", timedelta(hours=16, minutes=0), timedelta(hours=18, minutes=0))
@@ -37,13 +38,15 @@ def login(shark_name):
         return jsonify({"argument_was": 'None'})
 
 
-@app.route('/postjson/', methods=['GET', 'POST'])
+@app.route('/reserve/', methods=['GET', 'POST'])
 def post_json():
     if request.method == 'POST':
         received_json = request.get_json()
-        process_reservation_request(received_json)
+        print(received_json)
         print(received_json['parking_spots'])
-        return jsonify({"json_arg": "stuff"})
+        timetable = process_reservation_request(received_json)
+        print(received_json['parking_spots'])
+        return jsonify(timetable)
     else:
         return "post_json called without POST"
 
