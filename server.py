@@ -11,8 +11,7 @@ from reservation import Timetable, get_reservation_time, TimeSlot, get_first_fre
 app = Flask(__name__)
 
 
-def my_super_post_method(data):
-    # data = json.loads(data_json, object_hook=lambda d: SimpleNamespace(**d))
+def process_reservation_request(data):
     timetable = Timetable(data['parking_spots'])
     start, end = get_reservation_time(data['request']['time'])
     request = TimeSlot(data['request']['user'], start, end)
@@ -27,7 +26,8 @@ def my_super_post_method(data):
     # print(timetable)
     optimized_timetable = optimize_timetable(timetable)
     print(optimized_timetable)
-    return optimized_timetable
+    return optimized_timetable.to_json()
+
 
 @app.route('/thepostthepost/<shark_name>', methods=['GET', 'POST'])
 def login(shark_name):
@@ -41,11 +41,12 @@ def login(shark_name):
 def post_json():
     if request.method == 'POST':
         received_json = request.get_json()
-        my_super_post_method(received_json)
+        process_reservation_request(received_json)
         print(received_json['parking_spots'])
         return jsonify({"json_arg": "stuff"})
     else:
         return "post_json called without POST"
+
 
 @app.route('/')
 def hello_world():

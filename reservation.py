@@ -111,6 +111,15 @@ class Timetable:
                     smallest_difference = difference
         return spot, closest_time_slot
 
+    def to_json(self):
+        data['parking_spots'] = []
+        for parking_spot in self.parking_spots:
+            reservations = []
+            for time_slot in parking_spot.reservations:
+                reservations.append({"user": time_slot.user, "start": time_slot.start, "end": time_slot.end})
+            data['parking_spots'].append({"name": parking_spot.name, "reservable": parking_spot.is_reservable, "reservations": reservations})
+        return json.dumps(data)
+
 
 def get_reservation_time(slot):
     """Convert time slot from a string (for example '13:00') to timedelta time format"""
