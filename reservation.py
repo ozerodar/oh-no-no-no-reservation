@@ -54,7 +54,7 @@ class Timetable:
 
     def __str__(self):
         """Print every parking spot and its actual reservations"""
-        out_str = ""
+        out_str = "timetable:\n"
         for parking_spot in self.parking_spots:
             out_str = out_str + str(parking_spot) + "\n"
         return out_str
@@ -148,7 +148,6 @@ if __name__ == '__main__':
     timetable = Timetable(parking_spots_timetable.parking_spots)
     request = {'start': timedelta(hours=14, minutes=0), 'end': timedelta(hours=15, minutes=0)}
 
-    print()
     print(timetable)
 
     spot = get_first_free_parking_spot(timetable, request)
@@ -160,5 +159,4 @@ if __name__ == '__main__':
 
     request = {'spot': 'p1', 'start': timedelta(hours=16, minutes=0), 'end': timedelta(hours=18, minutes=0)}
     timetable.remove_reservation(request)
-    print('timetable:')
     print(timetable)
