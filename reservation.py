@@ -1,3 +1,8 @@
+import json
+from datetime import timedelta
+from types import SimpleNamespace
+
+
 class ParkingSpot:
     def __init__(self, parking_spot_info):
         self.name = parking_spot_info.name
@@ -51,3 +56,11 @@ class Timetable:
         for parking_spot in self.parking_spots:
             if parking_spot.name == target_parking_spot.name:
                 parking_spot.add_reservation(time_interval)
+
+def get_reservation_time(slot):
+    """Convert time slot from a string (for example '13:00') to timedelta time format"""
+    start_hours, start_minutes = slot.start.split(':')
+    end_hours, end_minutes = slot.end.split(':')
+    start = timedelta(hours=int(start_hours), minutes=int(start_minutes))
+    end = timedelta(hours=int(end_hours), minutes=int(end_minutes))
+    return start, end
