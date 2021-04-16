@@ -123,3 +123,24 @@ def get_first_free_parking_spot(timetable, request):
                                                            or previous_time_slot['end'] <= request['start']):
                 return parking_spot
     return None
+
+
+if __name__ == '__main__':
+    data = '{"parking_spots": [{"name": "p1", "reservations": [{"start": "10:00", "end": "13:00"}, \
+                                                              {"start": "16:00", "end": "18:00"}]}, \
+                               {"name": "p2", "reservations": [{"start": "9:00", "end": "10:00"},\
+                                                               {"start": "15:00", "end": "16:00"}]},\
+                               {"name": "p3", "reservations": [{"start": "08:00", "end": "18:00"}]}]}'
+
+    parking_spots_timetable = json.loads(data, object_hook=lambda d: SimpleNamespace(**d))
+    timetable = Timetable(parking_spots_timetable.parking_spots)
+    request = {'start': timedelta(hours=14, minutes=0), 'end': timedelta(hours=15, minutes=0)}
+
+    print(timetable)
+
+    spot = get_first_free_parking_spot(timetable, request)
+    print('request', request['start'], '-', request['end'], 'first free parking spot', spot)
+    spot_min_window = get_minimal_window_parking_spot(timetable, request)
+    print('request', request['start'], '-', request['end'], 'optimal parking spot', spot_min_window)
+    timetable.add_reservation(spot_min_window, request)
+    print(timetable)
