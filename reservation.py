@@ -32,3 +32,22 @@ class ParkingSpot:
                 self.reservations.insert(idx, interval)
                 return
         self.reservations.append(interval)  # append to the end
+
+
+class Timetable:
+    def __init__(self, parking_spots):
+        self.parking_spots = []
+        for parking_spot in parking_spots:
+            self.parking_spots.append(ParkingSpot(parking_spot))
+
+    def __str__(self):
+        """Print every parking spot and its actual reservations"""
+        out_str = ""
+        for parking_spot in self.parking_spots:
+            out_str = out_str + str(parking_spot) + "\n"
+        return out_str
+
+    def add_reservation(self, target_parking_spot, time_interval):
+        for parking_spot in self.parking_spots:
+            if parking_spot.name == target_parking_spot.name:
+                parking_spot.add_reservation(time_interval)
