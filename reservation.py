@@ -62,12 +62,17 @@ class ParkingSpot:
 
 
 class Timetable:
-    def __init__(self, reservations=None, json_data=None):
+    def __init__(self, reservations=None, json_data=None, reservable_spots=None):
         self.parking_spots = []
         self.original_json = json_data
 
         for i in range(101, 121):
-            self.parking_spots.append(ParkingSpot(str(i), True))  # TODO: add reservability info
+            if reservable_spots and i in reservable_spots:
+                self.parking_spots.append(ParkingSpot(str(i), True))  # TODO: add reservability info
+            elif reservable_spots:
+                self.parking_spots.append(ParkingSpot(str(i), False))
+            else:
+                self.parking_spots.append(ParkingSpot(str(i), True))
 
         if reservations is not None:
             for reservation_info in reservations:
