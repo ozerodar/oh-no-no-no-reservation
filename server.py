@@ -12,6 +12,7 @@ app = Flask(__name__)
 def post_json():
     if request.method == 'POST':
         received_json = request.get_json()
+        print(received_json)
         timetable = process_reservation_request(received_json)
         return jsonify(timetable)
     else:
