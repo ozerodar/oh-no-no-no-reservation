@@ -308,7 +308,6 @@ if __name__ == '__main__':
     data = json.loads(data_json)
     timetable = Timetable(data['winstrom']['udalost'], data)
     request = get_request(data['winstrom']['udalost'])
-
     print(timetable)
 
     spot = get_first_free_parking_spot(timetable, request)
@@ -316,11 +315,6 @@ if __name__ == '__main__':
     if spot_min_window:
         timetable.add_reservation(spot_min_window, request)
     print(timetable)
-
-    print(timetable.to_json())
-    # request = TimeSlot("10", timedelta(hours=16, minutes=0), timedelta(hours=18, minutes=0))
-    # timetable.remove_reservation('p1', request)
-    # print(timetable)
-    print('-------')
+    print('---- optimized ---')
     optimized_timetable = optimize_timetable(timetable)
     print(optimized_timetable)
