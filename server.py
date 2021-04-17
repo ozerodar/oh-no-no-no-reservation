@@ -23,6 +23,10 @@ def process_reservation_request(data):
     if spot_min_window:
         timetable.add_reservation(spot_min_window, request)
     print(timetable)
+    print('-------')
+    optimized_timetable = optimize_timetable(timetable)
+    print(optimized_timetable)
+    return optimized_timetable.to_json()
 
     # request = TimeSlot("10", timedelta(hours=16, minutes=0), timedelta(hours=18, minutes=0))
     # timetable.remove_reservation('p1', request)
@@ -44,9 +48,9 @@ def post_json():
     if request.method == 'POST':
         received_json = request.get_json()
         print(received_json)
-        print(received_json['parking_spots'])
+        # print(received_json['parking_spots'])
         timetable = process_reservation_request(received_json)
-        print(received_json['parking_spots'])
+        # print(received_json['parking_spots'])
         return jsonify(timetable)
     else:
         return "post_json called without POST"
