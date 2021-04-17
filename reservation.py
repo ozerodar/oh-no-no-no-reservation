@@ -221,6 +221,13 @@ def optimize_timetable(old_timetable):
     for idx, parking_spot in enumerate(old_timetable.parking_spots):
         # current_parking_spot = ParkingSpot(parking_spot.name, parking_spot.is_reservable)
 
+        if not parking_spot.is_reservable:
+            for reservation in parking_spot.reservations:
+                new_timetable.parking_spots[idx].add_reservation(reservation)
+            for reservation in parking_spot.reservations:
+                old_timetable.remove_reservation(parking_spot.name, reservation)
+            continue
+
         earliest_start_spot, current_time_slot = old_timetable.get_spot_with_earliest_time_slot()
 
         if earliest_start_spot is None:
@@ -246,6 +253,31 @@ def get_request(data):
         if element['predmet'] == "":
             start, end = get_reservation_time(element['zahajeni'], element['dokonceni'])
             return TimeSlot(element['id'], element['zodpPrac'], start, end)
+
+
+def process_reservation_request(data):
+    timetable = Timetable(data['winstrom']['udalost'], data)
+    request = get_request(data['winstrom']['udalost'])
+    print(timetable)
+
+    # spot = get_first_free_parking_spot(timetable, request)
+    spot_min_window = get_minimal_window_parking_spot(timetable, request)
+    if spot_min_window:
+        timetable.add_reservation(spot_min_window, request)
+    print(timetable)
+    print('-------')
+    # optimized_timetable = optimize_timetable(timetable)
+    # print(optimized_timetable)
+    return timetable.to_json()
+
+
+def optimize(data):
+    timetable = Timetable(data['winstrom']['udalost'], data)
+    # print(timetable)
+    # print('-------')
+    optimized_timetable = optimize_timetable(timetable)
+    print(optimized_timetable)
+    return optimized_timetable.to_json()
 
 
 if __name__ == '__main__':
@@ -305,16 +337,5 @@ if __name__ == '__main__':
         ]\
     }}'
 
-    data = json.loads(data_json)
-    timetable = Timetable(data['winstrom']['udalost'], data)
-    request = get_request(data['winstrom']['udalost'])
-    print(timetable)
-
-    spot = get_first_free_parking_spot(timetable, request)
-    spot_min_window = get_minimal_window_parking_spot(timetable, request)
-    if spot_min_window:
-        timetable.add_reservation(spot_min_window, request)
-    print(timetable)
-    print('---- optimized ---')
-    optimized_timetable = optimize_timetable(timetable)
-    print(optimized_timetable)
+    process_reservation_request(json.loads(data_json))
+    optimize(json.loads(data_json))
