@@ -62,14 +62,23 @@ class ParkingSpot:
 
 
 class Timetable:
-    def __init__(self, reservations=None, json_data=None, reservable_spots=None):
+    def __init__(self, reservations=None, json_data=None):
         self.parking_spots = []
         self.original_json = json_data
+        reservable_spots = None
+
+        if reservations:
+            for element in reservations:
+                if element['predmet'] == "":
+                    if 'reservation' in element.keys():
+                        reservable_spots = []
+                        for spot in element['reservation']:
+                            reservable_spots.append(spot)
 
         for i in range(101, 121):
-            if reservable_spots and i in reservable_spots:
+            if reservable_spots is not None and str(i) in reservable_spots:
                 self.parking_spots.append(ParkingSpot(str(i), True))  # TODO: add reservability info
-            elif reservable_spots:
+            elif reservable_spots is not None:
                 self.parking_spots.append(ParkingSpot(str(i), False))
             else:
                 self.parking_spots.append(ParkingSpot(str(i), True))

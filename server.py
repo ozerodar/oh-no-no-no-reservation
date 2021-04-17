@@ -19,7 +19,7 @@ def post_json():
 
 
 @app.route('/optimize/', methods=['GET', 'POST'])
-def post_json():
+def post_optimize():
     if request.method == 'POST':
         received_json = request.get_json()
         timetable = optimize(received_json)
