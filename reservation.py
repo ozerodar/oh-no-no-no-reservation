@@ -134,18 +134,28 @@ class Timetable:
                     smallest_difference = difference
         return spot, closest_time_slot
 
-    def to_json(self):
+    def to_json(self, request_only=False):
         data = copy.deepcopy(self.original_json)
 
-        for parking_spot in self.parking_spots:
-            for time_slot in parking_spot.reservations:
-                id = time_slot.id
-                for element in data['winstrom']['udalost']:
-                    if element['id'] == id:
-                        element['predmet'] = parking_spot.name
+        if request_only:  # LAST MINUTE CHANGE, MAY NOT BE VERY GOOD ONE
+            for element in data['winstrom']['udalost']:
+                if element['predmet'] == "":
+                    for parking_spot in self.parking_spots:
+                        for time_slot in parking_spot.reservations:
+                            if time_slot.id == element['id']:
+                                element['predmet'] = parking_spot.name
+                                return element
 
-                # reservations.append({"user": time_slot.user, "start": str(time_slot.start), "end": str(time_slot.end)})
-            # data['parking_spots'].append({"name": parking_spot.name, "reservable": parking_spot.is_reservable, "reservations": reservations})
+        if not request_only:
+            for parking_spot in self.parking_spots:
+                for time_slot in parking_spot.reservations:
+                    id = time_slot.id
+                    for element in data['winstrom']['udalost']:
+                        if element['id'] == id:
+                            element['predmet'] = parking_spot.name
+
+                    # reservations.append({"user": time_slot.user, "start": str(time_slot.start), "end": str(time_slot.end)})
+                # data['parking_spots'].append({"name": parking_spot.name, "reservable": parking_spot.is_reservable, "reservations": reservations})
         return data
 
 
@@ -235,7 +245,7 @@ def optimize_timetable(old_timetable):
     for idx, parking_spot in enumerate(old_timetable.parking_spots):
         # current_parking_spot = ParkingSpot(parking_spot.name, parking_spot.is_reservable)
 
-        if not parking_spot.is_reservable:
+        if not parking_spot.is_reservable: # if a spot is manager's spot leave it as it is
             for reservation in parking_spot.reservations:
                 new_timetable.parking_spots[idx].add_reservation(reservation)
             for reservation in parking_spot.reservations:
@@ -282,7 +292,7 @@ def process_reservation_request(data):
     print('-------')
     # optimized_timetable = optimize_timetable(timetable)
     # print(optimized_timetable)
-    return timetable.to_json()
+    return timetable.to_json(request_only=True)
 
 
 def optimize(data):
