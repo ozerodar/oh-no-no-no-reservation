@@ -8,7 +8,7 @@ test_data = json.loads('{\
         "udalost": [\
             {\
                 "id": "1",\
-                "lastUpdate": "2021-04-17T09:42:11.397+02:00",\
+                "lastUpdate": "2021-04-13T09:42:11.397+02:00",\
                 "cenik": "",\
                 "firma": "",\
                 "zahajeni": "2021-04-17T19:41:49.285+02:00",\
@@ -59,59 +59,21 @@ test_data = json.loads('{\
 
 
 optimal_space_data = json.loads('{\
-    "winstrom": {\
-        "@version": "1.0",\
-        "udalost": [\
-            {\
-                "id": "1",\
-                "lastUpdate": "2021-04-17T09:42:11.397+02:00",\
-                "cenik": "",\
-                "firma": "",\
-                "zahajeni": "2021-04-17T19:41:49.285+02:00",\
-                "dokonceni": "2021-04-17T20:41:49.285+02:00",\
-                "predmet": "102",\
-                "typAkt": "code:UDÁLOST",\
-                "typAkt@ref": "/c/rezervace1/typ-aktivity/1.json",\
-                "typAkt@showAs": "UDÁLOST: Událost",\
-                "zodpPrac": "code:admin",\
-                "zodpPrac@ref": "/c/rezervace1/uzivatel/1.json",\
-                "zodpPrac@showAs": "admin",\
-                "majetek": ""\
-            },\
-            {\
-                "id": "41",\
-                "lastUpdate": "2021-04-17T23:04:21.274+02:00",\
-                "cenik": "",\
-                "firma": "",\
-                "zahajeni": "2021-04-17T11:41:49.285+02:00",\
-                "dokonceni": "2021-04-17T12:41:49.285+02:00",\
-                "predmet": "101",\
-                "typAkt": "code:UDÁLOST",\
-                "typAkt@ref": "/c/rezervace1/typ-aktivity/1.json",\
-                "typAkt@showAs": "UDÁLOST: Událost",\
-                "zodpPrac": "code:admin",\
-                "zodpPrac@ref": "/c/rezervace1/uzivatel/1.json",\
-                "zodpPrac@showAs": "admin",\
-                "majetek": ""\
-            },\
-            {\
-                "id": "42",\
-                "lastUpdate": "2021-04-16T23:33:09.927+02:00",\
-                "cenik": "",\
-                "firma": "",\
-                "zahajeni": "2021-04-17T15:41:49.285+02:00",\
-                "dokonceni": "2021-04-17T16:41:49.285+02:00",\
-                "predmet": "102",\
-                "typAkt": "code:UDÁLOST",\
-                "typAkt@ref": "/c/rezervace1/typ-aktivity/1.json",\
-                "typAkt@showAs": "UDÁLOST: Událost",\
-                "zodpPrac": "code:admin",\
-                "zodpPrac@ref": "/c/rezervace1/uzivatel/1.json",\
-                "zodpPrac@showAs": "admin",\
-                "majetek": ""\
-            }\
-        ]\
-    }}')
+    "cenik": "",\
+    "dokonceni": "2021-04-17T20:41:49.285+02:00",\
+    "firma": "",\
+    "id": "1",\
+    "lastUpdate": "2021-04-13T09:42:11.397+02:00",\
+    "majetek": "",\
+    "predmet": "102",\
+    "typAkt": "code:UDÁLOST",\
+    "typAkt@ref": "/c/rezervace1/typ-aktivity/1.json",\
+    "typAkt@showAs": "UDÁLOST: Událost",\
+    "zahajeni": "2021-04-17T19:41:49.285+02:00",\
+    "zodpPrac": "code:admin",\
+    "zodpPrac@ref": "/c/rezervace1/uzivatel/1.json",\
+    "zodpPrac@showAs": "admin"\
+}')
 
 test_data_can_be_reserved_info = json.loads('{\
     "winstrom": {\
